@@ -2,6 +2,8 @@ from scipy.interpolate import CubicSpline
 import os
 import numpy as np
 import mengine as m
+import matplotlib.pyplot as plt
+
 np.set_printoptions(precision=3, suppress=True)
 
 # NOTE: This assignment asks you to Implement FK, plot the robot workspace, and check for collisions
@@ -27,8 +29,10 @@ def sample_configuration():
     # NOTE: Be conscious of joint angle limits
     # output: q: joint angles of the robot
     # ------ TODO Student answer below -------
-    print('TODO sample_configuration')
-    return np.zeros(3)
+    q1 = np.random.rand() * np.pi * 3./2. - np.pi
+    q2 = np.random.rand() * np.pi - np.pi/2.
+    q3 = np.random.rand() * np.pi - np.pi/2.
+    return np.array([q1, q2, q3])
     # ------ Student answer above -------
 
 
@@ -40,10 +44,33 @@ def calculate_FK(q, joint=3):
     # output: ee_position: position of the end effector
     #         ee_orientation: orientation of the end effector
     # ------ TODO Student answer below -------
-    print('TODO calculate_FK')
     position = np.zeros(3)
-    orientation = np.zeros(4)
-    # orientation = m.get_quaternion(orientation) # NOTE: If you used transformation matrices, call this function to get a quaternion
+    orientation = np.identity(4)
+
+    Ta = []
+    Ta.append(np.array([[np.cos(q[0]), -np.sin(q[0]), 0, 0],
+                    [np.sin(q[0]), np.cos(q[0]), 0, 0],
+                    [0, 0, 1, 0],
+                    [0, 0, 0, 1]]))
+    Ta.append(np.array([[1, 0, 0, 0],
+                    [0, np.cos(q[1]), -np.sin(q[1]), 0],
+                    [0, np.sin(q[1]), np.cos(q[1]), 0.5],
+                    [0, 0, 0, 1]]))
+    Ta.append(np.array([[1, 0, 0, 0],
+                    [0, np.cos(q[2]), -np.sin(q[2]), 0],
+                    [0, np.sin(q[2]), np.cos(q[2]), 0.4],
+                    [0, 0, 0, 1]]))
+    Ta.append(np.array([[1, 0, 0, 0],
+                    [0, 1, 0, 0],
+                    [0, 0, 1, 0.3],
+                    [0, 0, 0, 1]]))
+
+    T = np.identity(4)
+    for j in range(joint+1):
+        T = T@Ta[j]
+
+    position = T[:3, 3]
+    orientation = m.get_quaternion(T[:3, :3]) # NOTE: If you used transformation matrices, call this function to get a quaternion
     # ------ Student answer above -------
     return position, orientation
 
@@ -69,7 +96,13 @@ def plot_workspace(positions):
     # Plot the workspace of the robot
     # input: positions: list of positions of the end effector
     # ------ TODO Student answer below -------
-    print('TODO plot_workspace')
+    ps = np.array(positions)
+    ax = plt.figure().add_subplot(projection='3d')
+    ax.scatter(ps[:, 0], ps[:, 1], ps[:, 2])
+    ax.set_xlabel('X')
+    ax.set_ylabel('Y')
+    ax.set_zlabel('Z')
+    plt.show()
     return 0
     # ------ Student answer above -------
 
@@ -81,7 +114,23 @@ def check_collision(q, box_position, box_half_extents):
     #        box_half_extents: half extents of the collision region
     # output: in_collision: True if the robot is in collision region, False otherwise
     # ------ TODO Student answer below -------
-    print('TODO check_collision')
+
+    limits = []
+    for i in range(3):
+        limits.append([box_position[i]-box_half_extents[i], box_position[i]+box_half_extents[i]])
+
+    for j in range(1, 4):
+        ee_position, ee_orientation = calculate_FK(q, joint=j)
+
+        condition = True
+        for i in range(3):
+            l = limits[i]
+            condition &= ee_position[i]>limits[i][0]
+            condition &= ee_position[i]<limits[i][1]
+        
+        if condition:
+            return True
+
     return False
     # ------ Student answer above -------
 
@@ -90,6 +139,7 @@ def check_collision(q, box_position, box_half_extents):
 # Problem 3.1:
 # Implement FK for a 3-link manipulator and compare your implementation to the built-in function in pybullet
 # ##########################################
+
 robot = reset_sim()
 ee_positions = []
 ee_orientations = []
@@ -128,16 +178,20 @@ while True:
 # ##########################################
 
 # ------ TODO Student answer below -------
-for i in range(1000):
+ps = []
+for i in range(2000):
     # sample a random configuration q
-    # TODO
+    q = sample_configuration()
     # move robot into configuration q
     robot.control(q, set_instantly=True)
     m.step_simulation(realtime=True)
     # calculate ee_position, ee_orientation using calculate_FK
-    # TODO
+    ee_position, ee_orientation = calculate_FK(q, joint=3)
     # plot workspace as points of the end effector
-    # TODO
+    ps.append(ee_position)
+
+plot_workspace(ps)
+
 # ------ Student answer above -------
 
 # NOTE: Press enter to continue to problem 3.3
@@ -154,7 +208,7 @@ while True:
 # Expand FK to be FK to all joints and then check for collisions with a box region
 # ##########################################
 
-reset_sim()
+robot = reset_sim()
 # create a collision region
 box_position = np.array([-0.3, 0, 1.0])
 box_half_extents = np.array([0.15, 0.35, 0.25])
@@ -185,7 +239,6 @@ for i in range(200):
     m.step_simulation(realtime=True)
 
     # check if robot is in collision region
-    # TODO implement check_collision
     in_collision = check_collision(target_joint_angles, box_position, box_half_extents)
     if in_collision:
         box.change_visual(rgba=[1, 0, 0, 0.5])
@@ -194,3 +247,4 @@ for i in range(200):
     else:
         box.change_visual(rgba=[0, 1, 0, 0.5])
 print(t_collision)
+

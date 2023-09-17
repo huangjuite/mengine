@@ -30,7 +30,10 @@ def rodrigues_formula(n, x, theta):
     # input: n, x, theta: axis, point, angle
     # output: x_new: new point after rotation
     # ------ TODO Student answer below -------
-    return np.zeros(3)
+    
+    nx = n*(n@x) + np.sin(theta)*np.cross(n, x) - np.cos(theta)*np.cross(n, np.cross(n ,x))
+
+    return nx
     # ------ Student answer above -------
 
 
@@ -40,7 +43,20 @@ def rotate_euler(alpha, beta, gamma, x):
     # output: x_new: new point after rotation
 
     # ------ TODO Student answer below -------
-    return np.zeros(3)
+    R0 = np.array([[np.cos(alpha), -np.sin(alpha), 0],
+                   [np.sin(alpha), np.cos(alpha), 0],
+                   [0, 0, 1]])
+
+    R1 = np.array([[np.cos(beta),0, np.sin(beta)],
+                   [0, 1, 0],
+                   [-np.sin(beta), 0, np.cos(beta)]])
+
+    R2 = np.array([[np.cos(gamma), -np.sin(gamma), 0],
+                   [np.sin(gamma), np.cos(gamma), 0],
+                   [0, 0, 1]])
+    nx = R0@R1@R2@x
+
+    return nx
     # ------ Student answer above -------
 
 
@@ -50,7 +66,17 @@ def euler_to_rotation_matrix(alpha, beta, gamma):
     # output: R: rotation matrix
 
     # ------ TODO Student answer below -------
-    return np.zeros((3,3))
+    R0 = np.array([[np.cos(alpha), -np.sin(alpha), 0],
+                   [np.sin(alpha), np.cos(alpha), 0],
+                   [0, 0, 1]])
+    R1 = np.array([[np.cos(beta),0, np.sin(beta)],
+                   [0, 1, 0],
+                   [-np.sin(beta), 0, np.cos(beta)]])
+    R2 = np.array([[np.cos(gamma), -np.sin(gamma), 0],
+                   [np.sin(gamma), np.cos(gamma), 0],
+                   [0, 0, 1]])
+    
+    return R0 @ R1 @ R2
     # ------ Student answer above -------
 
 
@@ -59,7 +85,15 @@ def euler_to_axis_angle(alpha, beta, gamma):
     # input: alpha, beta, gamma: euler angles
     # output: n, theta
     # ------ TODO Student answer below -------
-    return np.zeros(3), 0
+    R = euler_to_rotation_matrix(alpha, beta, gamma)
+
+    theta = np.arccos((np.trace(R)-1)/2)
+    r = 2*np.sin(theta)
+    nx = (R[2,1]- R[1,2]) / r
+    ny = (R[0,2]- R[2,0]) / r
+    nz = (R[1,0]- R[0,1]) / r
+
+    return np.array([nx, ny, nz]), theta
     # ------ Student answer above -------
 
 

@@ -19,6 +19,24 @@ orient = np.eye(3)
 box = m.Shape(m.Box(half_extents=[0.1, 0.2, 0.05]), static=True,
               position=pos, orientation=m.get_quaternion(orient), rgba=[0, 1, 0, 1])
 
+def euler_to_rotation_matrix(alpha, beta, gamma):
+    # Convert euler angles (alpha, beta, gamma) to rotation matrix
+    # input: alpha, beta, gamma: euler angles
+    # output: R: rotation matrix
+
+    # ------ TODO Student answer below -------
+    R0 = np.array([[np.cos(alpha), -np.sin(alpha), 0],
+                   [np.sin(alpha), np.cos(alpha), 0],
+                   [0, 0, 1]])
+    R1 = np.array([[np.cos(beta),0, np.sin(beta)],
+                   [0, 1, 0],
+                   [-np.sin(beta), 0, np.cos(beta)]])
+    R2 = np.array([[np.cos(gamma), -np.sin(gamma), 0],
+                   [np.sin(gamma), np.cos(gamma), 0],
+                   [0, 0, 1]])
+    
+    return R0 @ R1 @ R2
+
 def apply_transform(pos, orient, d, euler):
     # transform a box using translation d and rotation given by euler angles
     # input: pos, orient: current position and orientation (rotation matrix) of the box
@@ -26,7 +44,19 @@ def apply_transform(pos, orient, d, euler):
     #        euler: target rotation in euler angles
     # output: pos_new, orient_new: new position and orientation (rotation matrix) of the box
     # ------ TODO Student answer below -------
-    return np.zeros(3), np.eye(3)
+
+    R = euler_to_rotation_matrix(euler[0], euler[1], euler[2])
+    T = np.identity(4)
+    T[:3, :3] = R
+    T[:3, 3] = d
+
+    P = np.identity(4)
+    P[:3, :3] = orient
+    P[:3, 3] = pos
+
+    P = T@P
+
+    return P[:3,3], P[:3, :3]
     # ------ Student answer above -------
 
 # Test cases for rotations
