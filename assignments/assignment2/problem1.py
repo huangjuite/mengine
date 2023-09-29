@@ -184,7 +184,7 @@ if __name__ == "__main__":
         qc = q
         qc[:3] *= -1
         x_new_q = hamilton_product(qx, qc)[:3]
-        
+
         point.set_base_pos_orient(x_new)
         point_q.set_base_pos_orient(x_new_q)
 
@@ -194,11 +194,14 @@ if __name__ == "__main__":
             x_new_report.append(x_new.tolist())
             x_new_q_report.append(x_new_q[:3].tolist())
         if i == 500:
+            print("=" * 30)
             print("Point rotated using rodrigues formula: ")
             for row in x_new_report:
                 formatted_row = [f"{elem:.4f}" for elem in row]
                 print(formatted_row)
+            print("=" * 30)
             print("Point rotated using hamilton product: ")
             for row in x_new_q_report:
                 formatted_row = [f"{elem:.4f}" for elem in row]
                 print(formatted_row)
+            print("=" * 30)
