@@ -3,6 +3,7 @@ import os
 import numpy as np
 import mengine as m
 from scipy.linalg import expm
+
 np.set_printoptions(precision=3, suppress=True)
 
 # NOTE: This assignment asks you to Implement FK using screw coordinates.
@@ -15,8 +16,11 @@ def reset_sim():
     ground = m.Ground([0, 0, -0.5])
     env.set_gui_camera(look_at_pos=[0, 0, 0.5], distance=1.5)
     # Create example robot
-    robot = m.URDF(filename=os.path.join(
-        m.directory, 'assignments', 'example_arm.urdf'), static=True, position=[0, 0, 0])
+    robot = m.URDF(
+        filename=os.path.join(m.directory, "assignments", "example_arm.urdf"),
+        static=True,
+        position=[0, 0, 0],
+    )
     robot.controllable_joints = [0, 1, 2]
     robot.end_effector = 3
     robot.update_joint_limits()
@@ -27,7 +31,9 @@ def sample_configuration():
     # Sample a random configuration for the robot.
     # NOTE: Be conscious of joint angle limits
     # output: q: joint angles of the robot
-    return np.random.uniform(low=[-np.pi, -np.pi/2, -np.pi/2], high=[np.pi/2, np.pi/2, np.pi/2])
+    return np.random.uniform(
+        low=[-np.pi, -np.pi / 2, -np.pi / 2], high=[np.pi / 2, np.pi / 2, np.pi / 2]
+    )
 
 
 def get_exp_coordinates(omega, v, theta):
@@ -40,9 +46,21 @@ def get_exp_coordinates(omega, v, theta):
     #        v: linear part
     #        theta: angle of rotation
     # output: E: exponential coordinates of the screw (4x4 matrix)
-    # ------ TODO Student answer below -------
-    return np.eye(4)
-    # ------ Student answer above -------
+
+    Wx = np.array(
+        [[0, -omega[2], omega[1]], [omega[2], 0, -omega[0]], [-omega[1], omega[0], 0]]
+    )
+    Wx_theta = theta * Wx
+    eS = np.identity(4)
+    eS[:3, :3] = expm(Wx_theta)
+
+    m = (
+        theta * np.identity(3)
+        + (1 - np.cos(theta)) * Wx
+        + (theta - np.sin(theta)) * (Wx @ Wx)
+    )
+    eS[:3, -1] = m @ v
+    return eS
 
 
 def calculate_FK(q, joint=3):
@@ -53,10 +71,25 @@ def calculate_FK(q, joint=3):
     #        joint: index of the joint to calculate the FK for. 0 is the base joint, and 3 is the end effector
     # output: ee_position: position of the end effector
     #         ee_orientation: orientation of the end effector as a quaternion
-    # ------ TODO Student answer below -------
-    # orientation = m.get_quaternion(orientation) # NOTE: If you used transformation matrices, call this function to get a quaternion
-    return np.zeros(3), np.array([0, 0, 0, 1])
-    # ------ Student answer above -------
+
+    M = np.identity(4)
+    M[:3, -1] = np.array([0, 0, 0.5 + 0.4 + 0.3])
+
+    eS1 = get_exp_coordinates(
+        omega=np.array([0, 0, 1]), v=np.array([0.0, 0.0, 0.0]), theta=q[0]
+    )
+    eS2 = get_exp_coordinates(
+        omega=np.array([1, 0, 0]), v=np.array([0.0, 0.5, 0.0]), theta=q[1]
+    )
+    eS3 = get_exp_coordinates(
+        omega=np.array([1, 0, 0]), v=np.array([0.0, 0.5 + 0.4, 0.0]), theta=q[2]
+    )
+
+    T = eS1 @ eS2 @ eS3 @ M
+
+    orientation = m.get_quaternion(T[:3, :3])
+
+    return T[:3, -1], orientation
 
 
 def compare_FK(ee_positions, ee_positions_pb, ee_orientations, ee_orientations_pb):
@@ -70,11 +103,12 @@ def compare_FK(ee_positions, ee_positions_pb, ee_orientations, ee_orientations_p
     for p1, p2 in zip(ee_positions, ee_positions_pb):
         distance_error_sum += np.linalg.norm(p1 - p2)
     for q1, q2 in zip(ee_orientations, ee_orientations_pb):
-        error = np.arccos(2*np.square(q1.dot(q2)) - 1)
+        error = np.arccos(2 * np.square(q1.dot(q2)) - 1)
         orientation_error_sum += 0 if np.isnan(error) else error
-    print('Average FK distance error:', distance_error_sum / len(ee_positions))
-    print('Average FK orientation error:',
-          orientation_error_sum / len(ee_orientations))
+    print("="*30)
+    print("Average FK distance error:", distance_error_sum / len(ee_positions))
+    print("Average FK orientation error:", orientation_error_sum / len(ee_orientations))
+    print("="*30)
 
 
 # ##########################################
@@ -87,8 +121,8 @@ robot = reset_sim()
 q_test = np.array([[0, 0, 0], [-0.3, 0.7, 0.9], [0.8, 1.4, 1.2]])
 for q_i, idx in zip(q_test, range(3)):
     ee_pos, ee_orient = calculate_FK(q_i, joint=3)
-    print("ee position and orientation for testcase ",
-          idx, ": ", ee_pos, ee_orient)
+    print("ee position and orientation for testcase ", idx, ": ", ee_pos, ee_orient)
+
 
 ee_positions = []
 ee_orientations = []
@@ -108,8 +142,7 @@ for i in range(1000):
     ee_positions.append(ee_position)
     ee_orientations.append(ee_orientation)
     # calculate ee position, orientation using pybullet's FK
-    ee_position_pb, ee_orientation_pb = robot.get_link_pos_orient(
-        robot.end_effector)
+    ee_position_pb, ee_orientation_pb = robot.get_link_pos_orient(robot.end_effector)
     ee_positions_pb.append(ee_position_pb)
 
     ee_orientations_pb.append(ee_orientation_pb)
