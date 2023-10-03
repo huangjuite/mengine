@@ -43,6 +43,22 @@ def line_intersection(p1, p2, q1, q2):
     return M
 
 
+def get_se3(trans, q):
+    x, y, z, w = q[0], q[1], q[2], q[3]
+    se3 = np.identity(4)
+    se3[:3, :3] = np.array(
+        [
+            [w * w + x * x - y * y - z * z, 2 * (x * y - w * z), 2 * (x * z + w * y)],
+            [2 * (x * y + w * z), w * w - x * x + y * y - z * z, 2 * (y * z - w * x)],
+            [2 * (x * z - w * y), 2 * (y * z + w * x), w * w - x * x - y * y + z * z],
+        ]
+    )
+
+    se3[:3, -1] = trans
+
+    return se3
+
+
 # Create environment and ground plane
 env = m.Env()
 # ground = m.Ground()
@@ -130,8 +146,12 @@ for i in range(10000):
                 )
                 # draw moving centrode
                 # get intersection point in local frame w.r.t. link 4
-                base = fbl.get_link_pos_orient(4)[0]                
-                local_intersect_point = intersect_point - base
+                trans, quat = fbl.get_link_pos_orient(3)
+                T4 = get_se3(trans, quat)
+                local_intersect_point = np.dot(
+                    np.linalg.inv(T4), np.hstack((intersect_point, 1))
+                )[:3]
+
                 intersect_points_local.append(local_intersect_point)
 
                 # get global coordinates of intersection point
@@ -146,11 +166,14 @@ for i in range(10000):
 
         # redraw intersection points of moving centrode
         # Hint: You can use Body.set_base_pos_orient(xyz) to update a body's position
-        base = fbl.get_link_pos_orient(4)[0]   
+        trans, quat = fbl.get_link_pos_orient(3)
+        T4 = get_se3(trans, quat)
+
         for body, point_local in zip(
             intersect_points_local_bodies, intersect_points_local
         ):
-            body.set_base_pos_orient(point_local+base)
+            point_global = np.dot(T4, np.hstack((point_local, 1)))[:3]
+            body.set_base_pos_orient(point_global)
 
     m.step_simulation(realtime=True)
 
