@@ -11,7 +11,7 @@ class Node:
         sequence = []
         node = self
         while node is not None:
-            sequence.append(node)
+            sequence.append(node.angles)
             node = node.parent
         return sequence[::-1] # Reverse the order of sequence
 
@@ -74,7 +74,51 @@ def rrt_connect(init, goal, max_iterations=100):
     reference: http://www.kuffner.org/james/papers/kuffner_icra2000.pdf
     """
     """TODO: Your Answer HERE"""
-    raise NotImplementedError
+    
+    Ta = [Node(init, None)]
+    Tb = [Node(goal, None)]
+
+    # def sample_(g, p_goal = 0.5):
+    #     r = np.random.rand()
+    #     if r>p_goal:
+    #         return g
+    #     return random_sample_config()
+
+    for k in range(max_iterations):
+        # a = sample_(goal)
+        a = random_sample_config()
+        qa, reached = extend(Ta, a)
+        if reached:
+            qb, connected = extend(Tb, a)
+            if connected:
+                path = qa.retrace()
+                path.extend(qb.retrace()[::-1])
+                return path
+                
+                # print(k, len(path))
+                # if len(path) > 150:
+                #     Ta = Ta[:-1]
+                #     Tb = Tb[:-1]
+                # else:
+                #     return path
+        
+        # b = sample_(init)
+        b = random_sample_config()
+        qb, reached = extend(Tb, b)
+        if reached:
+            qa, connected = extend(Ta, b)
+            if connected:
+                path = qa.retrace()
+                path.extend(qb.retrace()[::-1])
+                return path
+            
+                # print(k, len(path))
+                # if len(path) > 150:
+                #     Ta = Ta[:-1]
+                #     Tb = Tb[:-1]
+                # else:
+                #     return path
+
     return None
     """TODO: Your Answer END"""
 
@@ -89,7 +133,7 @@ def is_ee_close(robot, joint_angles, pos, orient):
                 np.linalg.norm(ee_orient - orient) < 0.01 or np.linalg.norm(ee_orient + orient) < 0.01)
 
 
-def moveto(robot, pos, orient, avoid_collision=False, max_iter=100, max_path_length=150):
+def moveto(robot, pos, orient, avoid_collision=False, max_iter=100, max_path_length=300):
     if not avoid_collision:
         print('Using simple move')
         robot.motor_gains = 0.05

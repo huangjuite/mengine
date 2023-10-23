@@ -43,6 +43,8 @@ def reset(scenario=0, n_steps=5, step_size=0.1):
     if scenario == 1.1:
         s1 = add_contact_point([-0.1 - radius_contact_spheres, 0, 0])
         s2 = add_contact_point([0.06, 0.08 + radius_contact_spheres, 0])
+        m.Shape(m.Sphere(radius=0.02), static=True,
+                   position=obj_pos + np.array([0.25, 0.05, 0]), rgba=[0, 1, 0, 1])
 
     if scenario == 1.2:
         s1 = add_contact_point([-0.1 - radius_contact_spheres, 0, 0])
@@ -50,8 +52,8 @@ def reset(scenario=0, n_steps=5, step_size=0.1):
 
         # ------ TODO Student answer below -------
         # Create point to rotate around axis
-        # rotation_axis = ?
-        # rotation_origin = ?
+        rotation_axis = np.array([0, 0, 1])
+        rotation_origin = np.array([-0.25, -0.05, 0])
         # ------ Student answer above -------
 
     if scenario == 1.3:
@@ -59,7 +61,7 @@ def reset(scenario=0, n_steps=5, step_size=0.1):
         s2 = add_contact_point([0.06, 0.08 + radius_contact_spheres, 0])
 
         # ------ TODO Student answer below -------
-        # Add contact point(s) to fully constrain object
+        s3 = add_contact_point([0.06, -0.08 - radius_contact_spheres, 0])
         # ------ Student answer above -------
 
 
@@ -113,3 +115,4 @@ wait_for_key('Scenario 1.2: Press enter to continue...')
 reset(scenario=1.3, n_steps=5)
 get_camera_image()
 wait_for_key('Scenario 1.3: Press enter to continue...')
+ 
