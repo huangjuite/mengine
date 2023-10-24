@@ -231,13 +231,14 @@ for i, current_cube in enumerate(range(len(cubes))):
     # MOVETO goal
     pos, ori = robot.get_link_pos_orient(robot.end_effector)
     moveto(robot, pos + [0, 0, 0.2], ori)
-    moveto(robot, [-0.1, 0.3, 0.8 + i * 0.05], default_euler, avoid_collision=True)
+    moveto(robot, [-0.1, 0.3, 1.0], default_euler, avoid_collision=True)
+    moveto(robot, [-0.1, 0.3, 0.8 + i * 0.05], default_euler)
 
     # OPEN
     robot.set_gripper_position([1]*2)
     m.step_simulation(steps=50, realtime=True)
     pos, ori = robot.get_link_pos_orient(robot.end_effector)
-    moveto(robot, pos + [0, 0, 0.1], ori)
+    moveto(robot, pos + [0, 0, 0.05], ori)
 
 print('Done')
 m.step_simulation(steps=10000, realtime=True)
