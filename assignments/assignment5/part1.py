@@ -44,7 +44,7 @@ def contact_screw_3d(
 # contact_normals_FC: a set of inward-pointing directions of edges of polyhedral friction cones [[sijx; sijy; sijz] ...]; Nx3 matrix
 #########################################################################
 
-
+# np.random.seed(777)
 def compute_rot_mat(n):
     # tR = np.array([[0, 1, 0], [0, 0, 1], [1, 0, 0]])
     # nx = n

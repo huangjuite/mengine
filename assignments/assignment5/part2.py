@@ -9,6 +9,7 @@ import copy
 from part1 import friction_cone_3d, contact_screw_3d, is_force_closure
 
 
+
 # Create environment and ground plane
 env = m.Env(time_step=0.005)
 env.set_gui_camera(look_at_pos=[0, 0, 0.95])
@@ -16,6 +17,8 @@ orient = m.get_quaternion([np.pi, 0, 0])
 
 
 def sample_spherical(npoints, ndim=3):
+    np.random.seed(77777)
+
     p = np.random.random((npoints, 3)) - 0.5
     points = 0.1 * p / np.linalg.norm(p, axis=1, keepdims=1)
     normal = -points
@@ -41,6 +44,7 @@ Rsample = np.array(
 
 
 def sample_cube(npoints, ndim=3):
+    np.random.seed(77777)
     points, normals = [], []
     for n in range(npoints):
         p = np.random.uniform(-0.1, 0.1, (3))
@@ -65,13 +69,13 @@ def sample_cube(npoints, ndim=3):
 
 
 def find_force_closure_grasp(testobj, mu) -> tuple:
-    max_iter, iter = 100, 0
+    max_iter, iter = 500, 0
     while True:
         iter += 1
         if testobj == "sphere":
-            points, normals = sample_spherical(3)
+            points, normals = sample_spherical(5)
         else:
-            points, normals = sample_cube(6)
+            points, normals = sample_cube(5)
 
         if mu != 0:
             contact_points_FC, contact_normals_FC = friction_cone_3d(
@@ -207,15 +211,15 @@ def visualize_grasps(grasps):
                     )
 
             m.step_simulation()
-            # time.sleep(0.5)
+            # time.sleep(1)
 
             
 
 
 def main(testobj, friction=True):
     # parameters to play with
-    obj_mass = 100
-    obj_friction = 0.5
+    obj_mass = 20
+    obj_friction = 0.8
     finger_mass = 10.0
     force_magnitude = 1000
     if friction:
@@ -267,3 +271,4 @@ if __name__ == "__main__":
         testobj = "sphere"
         friction = False
     main(testobj, friction)
+ 
